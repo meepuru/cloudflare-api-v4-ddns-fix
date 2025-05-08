@@ -6,7 +6,7 @@ set -o pipefail
 # Automatically update your CloudFlare DNS record to the IP, Dynamic DNS
 # Can retrieve cloudflare Domain id and list zone's, because, lazy
 
-# Place at:
+# Installation:
 # curl https://raw.githubusercontent.com/meepuru/cloudflare-api-v4-ddns-fix/master/cf-v4-ddns.sh > /usr/local/bin/cf-ddns.sh && chmod +x /usr/local/bin/cf-ddns.sh
 # run `crontab -e` and add next line:
 # */1 * * * * /usr/local/bin/cf-ddns.sh >/dev/null 2>&1
@@ -22,8 +22,11 @@ set -o pipefail
 
 # Optional flags:
 #            -f false|true \           # force dns update, disregard local stored ip
+#            -u user@example.com \     # Global API Key related setting, when provided, CFKEY or -k will be assumed as a Global API Key, be careful to use
+#            -? \                      # show usage
 
 # default config
+HELP=false
 
 # Warn: Deprecated, use account owned tokens instead, see https://dash.cloudflare.com/profile/api-tokens
 # Fill in this field will result in $CFKEY assuming as a Global API Key
@@ -42,13 +45,40 @@ CFRECORD_NAME=
 # Record type, A(IPv4)|AAAA(IPv6), default IPv4
 CFRECORD_TYPE=A
 
-# Cloudflare TTL for record, between 60 and 86400 seconds, 0 for automatically
+# Cloudflare TTL for record, between 60 and 86400 seconds, 0 for automatically, default 0
 CFTTL=0
 
-# Ignore local file, update ip anyway
+# Ignore local file, update ip anyway, default false.
 FORCE=false
 
 WANIPSITE="https://api-ipv4.kyaru.xyz/myip"
+
+# get parameter
+while getopts k:h:z:t:f:u:?: opts; do
+  case ${opts} in
+    k) CFKEY=${OPTARG} ;; # Cloudflare API token
+    h) CFRECORD_NAME=${OPTARG} ;; # Hostname to update (FQDN)
+    z) CFZONE_NAME=${OPTARG} ;; # Zone name (e.g., example.com)
+    t) CFRECORD_TYPE=${OPTARG} ;; # Record type (A for IPv4, AAAA for IPv6)
+    f) 
+      if [[ "${OPTARG}" != "false" && "${OPTARG}" != "true" ]]; then
+        echo "Invalid value for -f flag. Accepted values are 'false' or 'true'."
+        exit 2
+      fi
+      FORCE=${OPTARG} ;; # Force DNS update, ignoring local stored IP
+    u) CFUSER=${OPTARG} ;; # Cloudflare account email (for Global API Key)
+    ?) HELP="true" ;; # Show help message
+    *) 
+      echo "Invalid option: -${OPTARG}" 
+      exit 1 
+      ;; # Handle invalid options
+  esac
+done
+      echo "Invalid option: -${OPTARG}" 
+      exit 1 
+      ;;
+  esac
+done
 
 # Site to retrieve WAN ip, other examples are: bot.whatismyipaddress.com, https://api.ipify.org/ ...
 if [ "$CFRECORD_TYPE" = "A" ]; then
@@ -59,19 +89,6 @@ else
   echo "$CFRECORD_TYPE specified is invalid, CFRECORD_TYPE can only be A(for IPv4)|AAAA(for IPv6)"
   exit 2
 fi
-
-# get parameter
-while getopts k:h:z:t:f:u:?: opts; do
-  case ${opts} in
-    k) CFKEY=${OPTARG} ;;
-    h) CFRECORD_NAME=${OPTARG} ;;
-    z) CFZONE_NAME=${OPTARG} ;;
-    t) CFRECORD_TYPE=${OPTARG} ;;
-    f) FORCE=${OPTARG} ;;
-    u) CFUSER=${OPTARG} ;;
-    ?) HELP="true" ;;
-  esac
-done
 
 # If required settings are missing just exit
 if [ "$CFKEY" = "" ]; then
@@ -93,6 +110,7 @@ if [ $HELP ]; then
             -h host.example.com \\     # fqdn of the record you want to update\\
             -z example.com \\          # will show you all zones if forgot, but you need this\\
             -t A|AAAA                  # specify ipv4/ipv6, default: ipv4\\
+        Optional flags:\\
             -f false|true \\           # force dns update, disregard local stored ip\\
             -u user@example.com \\     # Global API Key related setting, when provided, CFKEY or -k will be assumed as a Global API Key, be careful to use\\
             -? \\                      # show this help\\"
@@ -112,11 +130,11 @@ WAN_IP_FILE=${HOME}/.cf-wan_ip_${CFRECORD_NAME}_${CFRECORD_TYPE}.txt
 if [ -f $WAN_IP_FILE ]; then
   OLD_WAN_IP=`cat $WAN_IP_FILE`
 else
-  echo "No file, need IP"
+  echo "Can't find WAN IP file, creating one"
   OLD_WAN_IP=""
 fi
 
-# If WAN IP is unchanged an not -f flag, exit here
+# If WAN IP is unchanged and without an -f flag, exit here
 if [ "$WAN_IP" = "$OLD_WAN_IP" ] && [ "$FORCE" = false ]; then
   echo "WAN IP Unchanged, to update anyway use flag -f true"
   exit 0
