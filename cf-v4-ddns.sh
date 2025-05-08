@@ -16,7 +16,6 @@ set -o pipefail
 
 # Usage:
 # cf-ddns.sh -k cloudflare-api-key \
-#            -u user@example.com \
 #            -h host.example.com \     # fqdn of the record you want to update
 #            -z example.com \          # will show you all zones if forgot, but you need this
 #            -t A|AAAA                 # specify ipv4/ipv6, default: ipv4
@@ -40,7 +39,7 @@ CFRECORD_NAME=
 CFRECORD_TYPE=A
 
 # Cloudflare TTL for record, between 60 and 86400 seconds, 0 for automatically
-CFTTL=120
+CFTTL=0
 
 # Ignore local file, update ip anyway
 FORCE=false
@@ -58,7 +57,7 @@ else
 fi
 
 # get parameter
-while getopts k:u:h:z:t:f: opts; do
+while getopts k:h:z:t:f: opts; do
   case ${opts} in
     k) CFKEY=${OPTARG} ;;
     h) CFRECORD_NAME=${OPTARG} ;;
@@ -88,7 +87,8 @@ fi
 
 # Get current and old WAN ip
 WAN_IP=`curl -s ${WANIPSITE}`
-WAN_IP_FILE=$HOME/.cf-wan_ip_$CFRECORD_NAME.txt
+# Add support for dual stack IPv4/IPv6
+WAN_IP_FILE=${HOME}/.cf-wan_ip_${CFRECORD_NAME}_${CFRECORD_TYPE}.txt
 if [ -f $WAN_IP_FILE ]; then
   OLD_WAN_IP=`cat $WAN_IP_FILE`
 else
