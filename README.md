@@ -4,7 +4,9 @@ Now the script also supports IPv6(AAAA DDNS Recoards) or both IPv4 and IPv6.
 
 Add support for Account owned tokens(see https://dash.cloudflare.com/profile/api-tokens).
 
-Installation:
+Notice: The url of WANIPSITE (`https://api-ipv4.kyaru.xyz/myip` and `https://api-ipv6.kyaru.xyz/myip`) is my personal service and may not stable, you can change it to other public IP check site like `https://api.ipify.org` or `https://ipinfo.io/ip`. If these sites don't provide specific IP version, you can add `-4` or `-6` to the end of the URL to force IPv4 or IPv6.
+
+## Usage
 ```bash
 curl https://raw.githubusercontent.com/meepuru/cloudflare-api-v4-ddns-fix/master/cf-v4-ddns.sh > /usr/local/bin/cf-ddns.sh && chmod +x /usr/local/bin/cf-ddns.sh
 ```

@@ -120,7 +120,14 @@ if [ "$CFRECORD_NAME" != "$CFZONE_NAME" ] && ! [ -z "${CFRECORD_NAME##*$CFZONE_N
 fi
 
 # Get current and old WAN ip
+# Test if WANIPSITE is reachable
+if ! curl -s --head --fail ${WANIPSITE} > /dev/null; then
+  echo "Error: Unable to reach WAN IP site: ${WANIPSITE}, please check your internet connection or change the WANIPSITE in ${0}."
+  exit 1
+fi
+# Retrieve WAN IP
 WAN_IP=`curl -s ${WANIPSITE}`
+
 # Add support for dual stack IPv4/IPv6
 WAN_IP_FILE=${HOME}/.cf-wan_ip_${CFRECORD_NAME}_${CFRECORD_TYPE}.txt
 if [ -f $WAN_IP_FILE ]; then
