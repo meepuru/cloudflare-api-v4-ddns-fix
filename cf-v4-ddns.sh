@@ -54,7 +54,7 @@ FORCE=false
 WANIPSITE="https://api-ipv4.kyaru.xyz/myip"
 
 # get parameter
-while getopts k:h:z:t:f:u:?: opts; do
+while getopts k:h:z:t:f:u:"?" opts; do
   case ${opts} in
     k) CFKEY=${OPTARG} ;; # Cloudflare API token
     h) CFRECORD_NAME=${OPTARG} ;; # Hostname to update (FQDN)
@@ -67,18 +67,27 @@ while getopts k:h:z:t:f:u:?: opts; do
       fi
       FORCE=${OPTARG} ;; # Force DNS update, ignoring local stored IP
     u) CFUSER=${OPTARG} ;; # Cloudflare account email (for Global API Key)
-    ?) HELP="true" ;; # Show help message
+    "?") HELP=true ;; # Show help message
     *) 
       echo "Invalid option: -${OPTARG}" 
       exit 1 
       ;; # Handle invalid options
   esac
 done
-      echo "Invalid option: -${OPTARG}" 
-      exit 1 
-      ;;
-  esac
-done
+
+if [ $HELP == true ]; then
+  echo "Usage:"
+  echo "    ${0} \\"
+  echo "        -k token \\                # Cloudflare account owned tokens"
+  echo "        -h host.example.com \\     # fqdn of the record you want to update"
+  echo "        -z example.com \\          # will show you all zones if forgot, but you need this"
+  echo "        -t A|AAAA \\               # specify ipv4/ipv6, default: ipv4"
+  echo "Optional flags:"
+  echo "        -f false|true \\           # force dns update, disregard local stored ip"
+  echo "        -u user@example.com \\     # Global API Key related setting, when provided, CFKEY or -k will be assumed as a Global API Key, be careful to use"
+  echo "        -? \\                      # show this help"
+  exit 0
+fi
 
 # Site to retrieve WAN ip, other examples are: bot.whatismyipaddress.com, https://api.ipify.org/ ...
 if [ "$CFRECORD_TYPE" = "A" ]; then
@@ -92,7 +101,7 @@ fi
 
 # If required settings are missing just exit
 if [ "$CFKEY" = "" ]; then
-  echo "Missing api-key, get at: https://dash.cloudflare.com/profile/api-tokens"
+  echo "Missing API token, get at: https://dash.cloudflare.com/profile/api-tokens"
   echo "and save in ${0} or using the -k flag"
   echo "for full usage, run ${0} -?"
   exit 2
@@ -102,19 +111,6 @@ if [ "$CFRECORD_NAME" = "" ]; then
   echo "save in ${0} or using the -h flag"
   echo "for full usage, run ${0} -?"
   exit 2
-fi
-if [ $HELP ]; then
-  echo "Usage: 
-            ${0}  
-            -k token \\                # Cloudflare account owned tokens \\
-            -h host.example.com \\     # fqdn of the record you want to update\\
-            -z example.com \\          # will show you all zones if forgot, but you need this\\
-            -t A|AAAA                  # specify ipv4/ipv6, default: ipv4\\
-        Optional flags:\\
-            -f false|true \\           # force dns update, disregard local stored ip\\
-            -u user@example.com \\     # Global API Key related setting, when provided, CFKEY or -k will be assumed as a Global API Key, be careful to use\\
-            -? \\                      # show this help\\"
-  exit 0
 fi
 
 # If the hostname is not a FQDN
