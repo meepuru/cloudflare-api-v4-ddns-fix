@@ -150,7 +150,7 @@ if [ -f $ID_FILE ] && [ $(wc -l $ID_FILE | cut -d " " -f 1) == 4 ] \
   && [ "$(sed -n '4,1p' "$ID_FILE")" == "$CFRECORD_NAME" ]; then
     CFZONE_ID=$(sed -n '1,1p' "$ID_FILE")
     CFRECORD_ID=$(sed -n '2,1p' "$ID_FILE")
-elif [ $CFUSER != "" ]; then
+elif [ "$CFUSER" != "" ]; then
 # If CFUSER is set, assume using Global API Key
     echo "Warning: Using Global API Key, not account owned tokens. If you want to use account owned tokens, please remove CFUSER from the script."
     echo "This is deprecated, please use account owned tokens instead."
@@ -175,7 +175,7 @@ fi
 
 # If WAN is changed, update cloudflare
 echo "Updating DNS to $WAN_IP"
-if [ $CFUSER != "" ]; then
+if [ "$CFUSER" != "" ]; then
   echo "Warning: Using Global API Key, not account owned tokens. If you want to use account owned tokens, please remove CFUSER from the script."
   echo "This is deprecated, please use account owned tokens instead."
   echo "See https://dash.cloudflare.com/profile/api-tokens for more information."
